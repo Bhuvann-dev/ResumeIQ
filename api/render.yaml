@@ -1,0 +1,16 @@
+# One-click-ish deploy to Render (https://render.com).
+# In the Render dashboard: New + > Blueprint > point at this repo.
+# Then set ANTHROPIC_API_KEY and CORS_ORIGINS in the service's Environment tab.
+services:
+  - type: web
+    name: resumeiq-api
+    runtime: docker
+    dockerfilePath: ./api/Dockerfile
+    dockerContext: ./api
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
