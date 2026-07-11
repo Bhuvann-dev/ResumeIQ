@@ -5,6 +5,10 @@ yet (deliberate for the slice — see docs/architecture.md). Resume bytes are he
 in memory only for the duration of the request and never written to disk.
 """
 
+from dotenv import load_dotenv
+
+load_dotenv()  # load api/.env for local dev before any module reads env vars
+
 import os
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
