@@ -53,7 +53,7 @@ async def analyze_resume(
     if not analyzer.api_key_configured():
         raise HTTPException(
             status_code=503,
-            detail="AI is not configured on the server (missing ANTHROPIC_API_KEY).",
+            detail="AI is not configured on the server (missing OPENAI_API_KEY).",
         )
 
     jd = (job_description or "").strip() or None

@@ -1,6 +1,6 @@
 # One-click-ish deploy to Render (https://render.com).
 # In the Render dashboard: New + > Blueprint > point at this repo.
-# Then set ANTHROPIC_API_KEY and CORS_ORIGINS in the service's Environment tab.
+# Then set OPENAI_API_KEY, OPENAI_MODEL, and CORS_ORIGINS in the Environment tab.
 services:
   - type: web
     name: resumeiq-api
@@ -10,7 +10,9 @@ services:
     plan: free
     healthCheckPath: /health
     envVars:
-      - key: ANTHROPIC_API_KEY
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
         sync: false
       - key: CORS_ORIGINS
         sync: false

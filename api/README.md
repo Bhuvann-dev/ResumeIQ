@@ -8,7 +8,7 @@ FastAPI backend for the MVP slice: **upload → parse → AI score**.
 cd api
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-cp .env.example .env        # then paste your ANTHROPIC_API_KEY into .env
+cp .env.example .env        # then paste your OPENAI_API_KEY into .env
 # load .env into your shell (or use a tool like python-dotenv / direnv), then:
 uvicorn main:app --reload
 ```

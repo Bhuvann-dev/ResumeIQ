@@ -1,17 +1,21 @@
 """The AI analysis engine.
 
-Isolated behind this module so the model or prompt can change without touching
-the API layer (see docs/decisions.md ADR-005). Returns a validated
-AnalysisResult — the model is forced to produce exactly that schema.
+Isolated behind this module so the model or provider can change without
+touching the API layer (see docs/decisions.md ADR-005). Uses OpenAI's
+structured outputs so the model is forced to return exactly the
+AnalysisResult schema — no fragile text parsing.
 """
 
 import os
 
-import anthropic
+from openai import OpenAI
 
 from models import AnalysisResult
 
-MODEL = "claude-opus-4-8"
+# Configurable so you can change the model without a code edit. Confirm the
+# exact model id on https://platform.openai.com/docs/models before deploying —
+# an unknown id returns a model-not-found error.
+MODEL = os.environ.get("OPENAI_MODEL", "gpt-5.5")
 MAX_TOKENS = 8000
 
 SYSTEM_PROMPT = """\
@@ -44,7 +48,7 @@ Keep the overall summary to one or two encouraging but honest sentences.\
 
 
 def analyze(resume_text: str, job_description: str | None = None) -> AnalysisResult:
-    client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY from the environment
+    client = OpenAI()  # reads OPENAI_API_KEY from the environment
 
     user_content = f"Here is the resume to analyze:\n\n---\n{resume_text}\n---"
     if job_description:
@@ -58,15 +62,23 @@ def analyze(resume_text: str, job_description: str | None = None) -> AnalysisRes
             "missing_keywords empty, and infer the likely target role."
         )
 
-    response = client.messages.parse(
+    completion = client.chat.completions.parse(
         model=MODEL,
-        max_tokens=MAX_TOKENS,
-        system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_content}],
-        output_format=AnalysisResult,
+        max_completion_tokens=MAX_TOKENS,
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_content},
+        ],
+        response_format=AnalysisResult,
     )
-    return response.parsed_output
+
+    message = completion.choices[0].message
+    if message.refusal:
+        raise RuntimeError(f"Model declined to analyze: {message.refusal}")
+    if message.parsed is None:
+        raise RuntimeError("Model returned no structured output.")
+    return message.parsed
 
 
 def api_key_configured() -> bool:
-    return bool(os.environ.get("ANTHROPIC_API_KEY"))
+    return bool(os.environ.get("OPENAI_API_KEY"))
