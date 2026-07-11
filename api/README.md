@@ -15,6 +15,26 @@ uvicorn main:app --reload
 
 Open http://localhost:8000/docs for the interactive API docs.
 
+## Free local dev with Ollama (no API key)
+
+The app talks to the model through an OpenAI-compatible endpoint, so you can run
+a local model with [Ollama](https://ollama.com) — free, private, no key.
+
+```bash
+ollama pull llama3.1        # one-time
+ollama serve               # if not already running
+```
+
+Then in `api/.env`, use Option B (leave `OPENAI_API_KEY` blank):
+
+```
+OPENAI_BASE_URL=http://localhost:11434/v1
+OPENAI_MODEL=llama3.1
+```
+
+Same code, same endpoints. Local models are weaker than `gpt-4o` at nuanced
+analysis, so switch `.env` back to Option A (OpenAI) for the public demo.
+
 ## Endpoints
 
 - `GET /health` → `{ "status": "ok", "ai_configured": true|false }`

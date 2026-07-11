@@ -30,7 +30,7 @@ app.add_middleware(
 
 @app.get("/health")
 def health() -> dict:
-    return {"status": "ok", "ai_configured": analyzer.api_key_configured()}
+    return {"status": "ok", "ai_configured": analyzer.ai_configured()}
 
 
 @app.post("/analyze", response_model=AnalysisResult)
@@ -50,10 +50,10 @@ async def analyze_resume(
     except ParseError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
-    if not analyzer.api_key_configured():
+    if not analyzer.ai_configured():
         raise HTTPException(
             status_code=503,
-            detail="AI is not configured on the server (missing OPENAI_API_KEY).",
+            detail="AI is not configured on the server (set OPENAI_API_KEY, or OPENAI_BASE_URL for a local Ollama).",
         )
 
     jd = (job_description or "").strip() or None

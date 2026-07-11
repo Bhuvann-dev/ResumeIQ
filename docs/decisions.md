@@ -134,6 +134,7 @@ Use the **OpenAI API** (GPT), called through a single `analyzer` module that for
 ### Consequences
 - A ChatGPT subscription does **not** grant API access — the API is separately billed pay-as-you-go. This is documented in the setup instructions so it isn't a surprise at deploy time.
 - We keep a thin abstraction and prompt discipline. Cheap insurance: if a better/cheaper model or provider appears, only `analyzer.py` changes.
+- Because we talk to an OpenAI-*compatible* endpoint, `OPENAI_BASE_URL` lets the same code run against a **local Ollama** model for free, private development, and against OpenAI in production — no code change, just env vars.
 
 ---
 

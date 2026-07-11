@@ -1,9 +1,10 @@
 """The AI analysis engine.
 
 Isolated behind this module so the model or provider can change without
-touching the API layer (see docs/decisions.md ADR-005). Uses OpenAI's
-structured outputs so the model is forced to return exactly the
-AnalysisResult schema — no fragile text parsing.
+touching the API layer (see docs/decisions.md ADR-005). Uses the OpenAI SDK
+with structured outputs, but the endpoint is configurable — set
+OPENAI_BASE_URL to point at any OpenAI-compatible server (e.g. Ollama) so you
+can develop locally for free and deploy on OpenAI unchanged.
 """
 
 import os
@@ -12,10 +13,14 @@ from openai import OpenAI
 
 from models import AnalysisResult
 
-# Configurable so you can change the model without a code edit. gpt-4o-2024-08-06
-# is the snapshot that introduced Structured Outputs, so chat.completions.parse
-# is fully supported. See https://platform.openai.com/docs/models.
+# Model id. For OpenAI, gpt-4o-2024-08-06 supports Structured Outputs.
+# For Ollama, set this to a local model, e.g. "llama3.1".
 MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o-2024-08-06")
+
+# Optional OpenAI-compatible endpoint. Leave unset for OpenAI itself; set to
+# http://localhost:11434/v1 for a local Ollama server.
+BASE_URL = os.environ.get("OPENAI_BASE_URL") or None
+
 MAX_TOKENS = 8000
 
 SYSTEM_PROMPT = """\
@@ -47,8 +52,15 @@ Keep the overall summary to one or two encouraging but honest sentences.\
 """
 
 
+def _client() -> OpenAI:
+    # A real key for OpenAI; any non-empty placeholder works for a local
+    # Ollama endpoint, which ignores it.
+    api_key = os.environ.get("OPENAI_API_KEY") or ("ollama" if BASE_URL else None)
+    return OpenAI(base_url=BASE_URL, api_key=api_key)
+
+
 def analyze(resume_text: str, job_description: str | None = None) -> AnalysisResult:
-    client = OpenAI()  # reads OPENAI_API_KEY from the environment
+    client = _client()
 
     user_content = f"Here is the resume to analyze:\n\n---\n{resume_text}\n---"
     if job_description:
@@ -64,7 +76,7 @@ def analyze(resume_text: str, job_description: str | None = None) -> AnalysisRes
 
     completion = client.chat.completions.parse(
         model=MODEL,
-        max_completion_tokens=MAX_TOKENS,
+        max_tokens=MAX_TOKENS,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_content},
@@ -75,10 +87,16 @@ def analyze(resume_text: str, job_description: str | None = None) -> AnalysisRes
     message = completion.choices[0].message
     if message.refusal:
         raise RuntimeError(f"Model declined to analyze: {message.refusal}")
-    if message.parsed is None:
-        raise RuntimeError("Model returned no structured output.")
-    return message.parsed
+    if message.parsed is not None:
+        return message.parsed
+    # Fallback: some OpenAI-compatible servers (e.g. certain Ollama models)
+    # return schema-valid JSON in `content` without the strict-parse path.
+    if message.content:
+        return AnalysisResult.model_validate_json(message.content)
+    raise RuntimeError("Model returned no structured output.")
 
 
-def api_key_configured() -> bool:
-    return bool(os.environ.get("OPENAI_API_KEY"))
+def ai_configured() -> bool:
+    """True when we can reach a model: a real OpenAI key, or a custom endpoint
+    (Ollama) that needs no key."""
+    return bool(os.environ.get("OPENAI_API_KEY") or BASE_URL)
