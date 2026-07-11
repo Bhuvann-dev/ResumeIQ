@@ -12,10 +12,10 @@ from openai import OpenAI
 
 from models import AnalysisResult
 
-# Configurable so you can change the model without a code edit. Confirm the
-# exact model id on https://platform.openai.com/docs/models before deploying —
-# an unknown id returns a model-not-found error.
-MODEL = os.environ.get("OPENAI_MODEL", "gpt-5.5")
+# Configurable so you can change the model without a code edit. gpt-4o-2024-08-06
+# is the snapshot that introduced Structured Outputs, so chat.completions.parse
+# is fully supported. See https://platform.openai.com/docs/models.
+MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o-2024-08-06")
 MAX_TOKENS = 8000
 
 SYSTEM_PROMPT = """\
