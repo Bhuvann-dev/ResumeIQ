@@ -22,12 +22,17 @@ out/
 npm-debug.log*
 logs/
 
-# OS / editor
+# OS / editor / tooling
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/
 *.swp
+.claude/
+
+# Next.js
+next-env.d.ts
+.next/
 
 # Test / coverage
 coverage/

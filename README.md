@@ -82,30 +82,38 @@ This repo is documented like a real product, not a code dump:
 - 📄 **[docs/prd.md](docs/prd.md)** — the problem, users, requirements, and success metrics.
 - 🏛️ **[docs/architecture.md](docs/architecture.md)** — how the system fits together, with diagrams.
 - 🧭 **[docs/decisions.md](docs/decisions.md)** — the *why* behind every major technical choice (ADRs).
-- 🔌 **docs/api-spec.md** — the API contract _(added as endpoints are built)_.
+- 🔌 **[docs/api-spec.md](docs/api-spec.md)** — the API contract (live `/analyze` endpoint + planned routes).
 - 🗄️ **docs/database.md** — schema and relationships _(added alongside migrations)_.
 
 ## Getting Started
 
-> _Setup instructions will be finalized as the app is built. Planned quickstart:_
+The MVP slice runs as two apps — a FastAPI backend and a Next.js frontend.
 
 ```bash
-# 1. Clone
-git clone https://github.com/<you>/ResumeIQ.git && cd ResumeIQ
+git clone https://github.com/Bhuvann-dev/ResumeIQ.git && cd ResumeIQ
 
-# 2. Frontend
-cd web && npm install && npm run dev
+# 1. Backend (needs an Anthropic API key)
+cd api
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env        # paste your ANTHROPIC_API_KEY into .env, then load it
+uvicorn main:app --reload   # http://localhost:8000/docs
 
-# 3. Backend
-cd api && pip install -r requirements.txt && uvicorn main:app --reload
+# 2. Frontend (in a second terminal)
+cd web
+npm install
+cp .env.example .env.local  # points at http://localhost:8000 by default
+npm run dev                 # http://localhost:3000
 ```
+
+See [api/README.md](api/README.md) for backend details.
 
 ## Roadmap
 
 - [x] Product definition (PRD)
 - [x] System architecture
 - [x] Architecture Decision Records
-- [ ] MVP vertical slice: upload → parse → score
+- [x] MVP vertical slice: upload → parse → AI score (FastAPI + Next.js)
 - [ ] Deployed public demo
 - [ ] Analysis dashboard UI
 - [ ] AI rewrite + export
