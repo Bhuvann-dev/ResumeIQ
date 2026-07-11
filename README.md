@@ -10,7 +10,7 @@
 [![Frontend](https://img.shields.io/badge/frontend-Next.js%20%2B%20TypeScript-black)]()
 [![Backend](https://img.shields.io/badge/backend-FastAPI-009688)]()
 [![Database](https://img.shields.io/badge/database-PostgreSQL-336791)]()
-[![AI](https://img.shields.io/badge/AI-Claude-8A2BE2)]()
+[![AI](https://img.shields.io/badge/AI-OpenAI-10a37f)]()
 [![License](https://img.shields.io/badge/license-MIT-blue)]()
 
 <!-- Replace with a real link once deployed -->
@@ -52,7 +52,7 @@ Optionally paste a **job description** to get a keyword-match score and gap anal
 Client (Next.js)  →  API Gateway  →  FastAPI (stateless)
                                         ├─ Parsing Service   (PDF/DOCX → text)
                                         ├─ Job Queue         (Redis + Celery)
-                                        │     └─ AI Service   (Claude: score + rewrite)
+                                        │     └─ AI Service   (OpenAI: score + rewrite)
                                         ├─ Export Service    (→ PDF/DOCX)
                                         ├─ PostgreSQL        (users · analyses · results)
                                         └─ Object Storage    (temp resumes, auto-deleted)
@@ -68,7 +68,7 @@ Full breakdown with diagrams → **[docs/architecture.md](docs/architecture.md)*
 | Backend | FastAPI (Python) |
 | Async | Redis + Celery |
 | Database | PostgreSQL |
-| AI | Claude (Opus / Sonnet) via a model-agnostic client |
+| AI | OpenAI (GPT) via structured outputs, behind a swappable client |
 | Storage | S3 / GCS with lifecycle auto-delete |
 | Auth | OAuth (Google) + JWT, guest-first |
 | Hosting | Vercel (web) + containerized API/workers |
@@ -92,7 +92,7 @@ The MVP slice runs as two apps — a FastAPI backend and a Next.js frontend.
 ```bash
 git clone https://github.com/Bhuvann-dev/ResumeIQ.git && cd ResumeIQ
 
-# 1. Backend (needs an Anthropic API key)
+# 1. Backend (needs an OpenAI API key)
 cd api
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt

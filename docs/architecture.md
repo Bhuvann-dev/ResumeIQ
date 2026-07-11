@@ -44,7 +44,7 @@ graph TB
     end
 
     subgraph External["External"]
-        LLM["Claude API — Opus / Sonnet"]
+        LLM["OpenAI API — GPT"]
         AUTHP["Auth Provider — OAuth / JWT"]
     end
 
@@ -93,7 +93,7 @@ graph TD
     REPO --> DB[("PostgreSQL")]
     REPO --> CACHE[("Redis")]
     SVC --> QP["Queue Producer"] --> QUEUE["Redis Queue"] --> WORKER["Celery Worker — parse + AI"]
-    WORKER --> LLM["Claude API"]
+    WORKER --> LLM["OpenAI API"]
     SVC --> BLOB["Object Storage"]
 ```
 
@@ -101,25 +101,24 @@ graph TD
 
 ## 5. AI Service
 
-The intelligence core, isolated behind a model abstraction.
+The intelligence core, isolated behind a single `analyzer` module so the model or provider can change without touching the rest of the app.
 
 ```mermaid
 graph TD
     IN["Structured resume text (+ optional JD)"] --> PB["Prompt Builder — role + rubric + resume + JD"]
     PB --> GUARD["Guardrails — no fabrication · PII-safe"]
-    GUARD --> CALL["LLM Client — model routing"]
-    CALL --> OPUS["Claude Opus — deep rewrite / hard cases"]
-    CALL --> SONNET["Claude Sonnet — fast bulk scoring"]
-    OPUS --> PARSEOUT["Response parser → structured JSON"]
-    SONNET --> PARSEOUT
+    GUARD --> CALL["AI Client (OpenAI, env-configurable model)"]
+    CALL --> MODEL["GPT — structured-output call"]
+    MODEL --> PARSEOUT["Response parser → structured JSON"]
     PARSEOUT --> VALID["Schema validation — score · issues · rewrites"]
     VALID --> OUT["Analysis result"]
 ```
 
-- **Structured output:** the model is forced to return validated JSON (score, issues, rewrites) for reliable parsing.
-- **Model routing:** Sonnet for cost-efficient scale, Opus for complex rewrites.
-- **Guardrails:** rewrites only existing facts — no invented experience.
-- **Cost control:** token caps + caching of identical requests.
+- **Structured output:** the model is forced to return validated JSON (score, issues, rewrites) via OpenAI structured outputs — no fragile text parsing.
+- **One schema, no drift:** the same Pydantic model is the API contract *and* the AI output schema (see [decisions.md](decisions.md) ADR-005).
+- **Swappable:** the provider lives in one module and the model id is an env var, so switching model/provider is a localized change.
+- **Guardrails:** scores real content only — no invented experience.
+- **Cost control:** token caps + caching of identical requests (planned).
 
 ---
 
@@ -175,7 +174,7 @@ sequenceDiagram
     participant BLOB as Object Storage
     participant Q as Queue
     participant W as Worker
-    participant LLM as Claude API
+    participant LLM as OpenAI API
     participant DB as PostgreSQL
 
     U->>FE: Upload resume (+ optional JD)
@@ -219,7 +218,7 @@ graph TB
     API --> PG[("Managed PostgreSQL")]
     API --> S3["Object Storage"]
     REDIS --> WORKERS["Celery Workers (autoscaling)"]
-    WORKERS --> CLAUDE["Claude API"]
+    WORKERS --> LLM["OpenAI API"]
     API --> SENTRY["Sentry + metrics"]
 ```
 

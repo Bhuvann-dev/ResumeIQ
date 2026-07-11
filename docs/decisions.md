@@ -111,24 +111,29 @@ Our users are freshers who bounce at any friction. But we also want optional acc
 
 ---
 
-## ADR-005 — Model-agnostic AI client with Opus/Sonnet routing
+## ADR-005 — OpenAI (GPT) for the AI engine, behind a swappable abstraction
 
-**Status:** Accepted · **Date:** 2026-07-11
+**Status:** Accepted · **Date:** 2026-07-11 · **Supersedes:** an earlier draft that specified Claude
 
 ### Context
-AI is the core, but models change fast and cost varies widely. We need quality rewrites *and* affordable scale.
+AI is the core of the product. Models change fast and cost varies, so we need a provider that's a good fit today without locking the design to it. For ATS scoring — a structured-extraction task — the leading providers are close to interchangeable in quality.
+
+### Options
+- **OpenAI (GPT)** — mature Python SDK, first-class structured outputs, and the credits/access the builder already has.
+- **Anthropic (Claude)** — comparable quality and structured outputs; would require separate API billing to set up.
 
 ### Decision
-Put the LLM behind a **client abstraction** and **route by task**: a cheaper, fast model (Claude Sonnet) for bulk scoring, a stronger model (Claude Opus) for complex rewrites. Force **structured JSON output** validated against a schema.
+Use the **OpenAI API** (GPT), called through a single `analyzer` module that forces **structured JSON output** validated against the shared Pydantic schema. The model id is env-configurable (`OPENAI_MODEL`), and the provider is isolated in one module so it can be swapped later.
 
 ### Reasoning
-- **Isolation** means we can swap or upgrade models without touching business logic — important given how fast the field moves.
-- **Routing** balances cost and quality: most requests don't need the most expensive model.
-- **Structured, validated output** makes AI responses reliable to parse and lets the model retry on schema mismatch instead of emitting free text we then regex.
-- **Guardrails** in the prompt layer enforce a hard product rule: rewrite only real facts, never fabricate experience.
+- **Practical access wins when quality is a wash.** ATS scoring doesn't need a specific frontier model; both providers handle it well. The deciding factor is that the builder already has OpenAI API access, so there's no reason to add a second billing relationship.
+- **Structured, validated output** (`client.chat.completions.parse` + a Pydantic schema) makes responses reliable to consume and lets the model be constrained to exactly our schema — no fragile text parsing.
+- **Isolation** keeps the provider in one file. The Pydantic schema *is* both the API contract and the AI output schema, so swapping providers later means editing `analyzer.py` only — the rest of the app doesn't know or care who serves the model.
+- **Guardrails** in the prompt enforce a hard product rule: base scoring on real content, never fabricate experience.
 
 ### Consequences
-- A thin abstraction and prompt-versioning discipline to maintain. Cheap insurance against model churn and runaway cost.
+- A ChatGPT subscription does **not** grant API access — the API is separately billed pay-as-you-go. This is documented in the setup instructions so it isn't a surprise at deploy time.
+- We keep a thin abstraction and prompt discipline. Cheap insurance: if a better/cheaper model or provider appears, only `analyzer.py` changes.
 
 ---
 
