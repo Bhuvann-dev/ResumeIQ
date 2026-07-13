@@ -104,6 +104,12 @@ filters and impress recruiters.
 Rewrite the given resume into a clean, ATS-friendly version. Rules:
 - Keep it truthful — use ONLY facts present in the original. Never invent \
   employers, dates, metrics, or skills.
+- PRESERVE EVERYTHING. Keep every section the original has — including \
+  Achievements, Languages, Certifications, Training, and Objective — and every \
+  listed skill, project, and bullet. You may reorder, regroup, and reword for \
+  impact and ATS-friendliness, but NEVER drop a section, a skill, or a fact. \
+  If the original groups skills (Languages / Frontend / Backend / etc.), keep \
+  those groups as separate bullets (e.g. "- Languages: Java, JavaScript").
 - Single-column, standard sections in this order when the content exists: \
   Contact, Summary, Skills, Experience, Projects, Education, Certifications.
 - Start bullets with strong action verbs; make impact concrete where the \
