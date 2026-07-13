@@ -77,6 +77,7 @@ def analyze(resume_text: str, job_description: str | None = None) -> AnalysisRes
     completion = client.chat.completions.parse(
         model=MODEL,
         max_tokens=MAX_TOKENS,
+        temperature=0,  # deterministic: same resume -> same score/issues
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_content},
@@ -134,39 +135,52 @@ One or two lines.
 ### Software Intern, Acme (2023)
 - Did X that resulted in Y.
 
-Do not add commentary before or after — output only the resume, then fill \
-key_changes with the main improvements you made.\
+Output ONLY the resume in the format above — no preamble, no commentary, no \
+code fences. Include every section the original has; never stop after the \
+summary.\
 """
+
+
+def _strip_code_fence(text: str) -> str:
+    """Remove a wrapping ```...``` fence if the model added one."""
+    t = text.strip()
+    if t.startswith("```"):
+        lines = t.splitlines()[1:]  # drop opening fence (``` or ```markdown)
+        if lines and lines[-1].strip().startswith("```"):
+            lines = lines[:-1]
+        t = "\n".join(lines).strip()
+    return t
 
 
 def improve(resume_text: str, job_description: str | None = None) -> ImproveResult:
     client = _client()
 
-    user_content = f"Rewrite this resume:\n\n---\n{resume_text}\n---"
+    user_content = f"Rewrite this resume in full:\n\n---\n{resume_text}\n---"
     if job_description:
         user_content += (
             "\n\nTailor it (truthfully) toward this job description:\n\n"
             f"---\n{job_description}\n---"
         )
 
-    completion = client.chat.completions.parse(
+    # Plain completion (not structured JSON): small local models complete a long
+    # rewrite far more reliably as free-form markdown than inside a JSON field.
+    completion = client.chat.completions.create(
         model=MODEL,
         max_tokens=MAX_TOKENS,
+        temperature=0,
         messages=[
             {"role": "system", "content": IMPROVE_SYSTEM_PROMPT},
             {"role": "user", "content": user_content},
         ],
-        response_format=ImproveResult,
     )
 
     message = completion.choices[0].message
-    if message.refusal:
+    if getattr(message, "refusal", None):
         raise RuntimeError(f"Model declined to rewrite: {message.refusal}")
-    if message.parsed is not None:
-        return message.parsed
-    if message.content:
-        return ImproveResult.model_validate_json(message.content)
-    raise RuntimeError("Model returned no structured output.")
+    markdown = _strip_code_fence(message.content or "")
+    if not markdown:
+        raise RuntimeError("Model returned no content.")
+    return ImproveResult(improved_markdown=markdown, key_changes=[])
 
 
 def ai_configured() -> bool:

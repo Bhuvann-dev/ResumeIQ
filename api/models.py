@@ -47,5 +47,6 @@ class ImproveResult(BaseModel):
         "(# name, ## sections, - bullets)"
     )
     key_changes: list[str] = Field(
-        description="Short bullets summarizing the main improvements made"
+        default_factory=list,
+        description="Short bullets summarizing the main improvements made",
     )
