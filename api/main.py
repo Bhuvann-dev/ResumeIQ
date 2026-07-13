@@ -11,6 +11,7 @@ load_dotenv()  # load api/.env for local dev before any module reads env vars
 
 import os
 import re
+from typing import Literal
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,12 +19,13 @@ from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 import analyzer
-from exporter import markdown_to_docx
+from exporter import markdown_to_docx, markdown_to_pdf
 from models import AnalysisResult, ImproveResult
 from parser import ParseError, extract_text
 
 MAX_BYTES = 5 * 1024 * 1024  # 5 MB
 DOCX_MEDIA_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+PDF_MEDIA_TYPE = "application/pdf"
 
 app = FastAPI(title="ResumeIQ API", version="0.2.0")
 
@@ -94,15 +96,19 @@ async def improve_resume(
 class ExportRequest(BaseModel):
     markdown: str = Field(min_length=1)
     filename: str = "resume_improved"
+    format: Literal["docx", "pdf"] = "docx"
 
 
 @app.post("/export")
-def export_docx(req: ExportRequest) -> Response:
+def export(req: ExportRequest) -> Response:
     # Sanitize the filename to a safe basename (no path/header injection).
     safe = re.sub(r"[^A-Za-z0-9_-]", "_", req.filename).strip("_") or "resume_improved"
-    data = markdown_to_docx(req.markdown)
+    if req.format == "pdf":
+        data, media_type = markdown_to_pdf(req.markdown), PDF_MEDIA_TYPE
+    else:
+        data, media_type = markdown_to_docx(req.markdown), DOCX_MEDIA_TYPE
     return Response(
         content=data,
-        media_type=DOCX_MEDIA_TYPE,
-        headers={"Content-Disposition": f'attachment; filename="{safe}.docx"'},
+        media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="{safe}.{req.format}"'},
     )
