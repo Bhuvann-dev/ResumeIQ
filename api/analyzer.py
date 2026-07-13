@@ -111,11 +111,31 @@ Rewrite the given resume into a clean, ATS-friendly version. Rules:
 - If a job description is provided, naturally incorporate its relevant keywords \
   ONLY where they truthfully apply to the candidate.
 
-Output the rewritten resume as simple markdown:
-- `# Full Name` on the first line, then a contact line (email · phone · links).
-- `## Section Name` for each section.
-- `- ` for each bullet point.
-Do not add commentary — just the resume. Then list the key_changes you made.\
+Output the COMPLETE rewritten resume — every section, every bullet, not a \
+summary or an outline. Use exactly this markdown format:
+- ONE `# ` line: the full name. (Never use `##`, `###`, or `####` for the name.)
+- `## ` for each section heading.
+- `- ` for every bullet. Do not use `*`, `•`, or any other bullet character.
+- Plain text for the contact line and any prose.
+
+Example shape:
+
+# Jane Doe
+jane@example.com | +1 555 0100 | github.com/jane
+
+## Summary
+One or two lines.
+
+## Skills
+- Python
+- React
+
+## Experience
+### Software Intern, Acme (2023)
+- Did X that resulted in Y.
+
+Do not add commentary before or after — output only the resume, then fill \
+key_changes with the main improvements you made.\
 """
 
 
