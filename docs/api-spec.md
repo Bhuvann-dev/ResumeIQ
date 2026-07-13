@@ -87,10 +87,50 @@ Error bodies follow FastAPI's shape: `{ "detail": "<message>" }`.
 
 ---
 
+## `POST /improve`
+
+Upload a resume (and optional JD) and get an AI-rewritten, ATS-friendly version.
+
+**Request** — `multipart/form-data` (same fields as `/analyze`).
+
+**200 OK** — `ImproveResult`
+```json
+{
+  "improved_markdown": "# Jane Doe\njane@example.com · github.com/jane\n\n## Summary\n...\n\n## Skills\n- Python\n- React\n",
+  "key_changes": [
+    "Rewrote experience bullets with strong action verbs",
+    "Added a Skills section with JD-relevant keywords",
+    "Removed the two-column layout that broke ATS parsing"
+  ]
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `improved_markdown` | string | Full rewritten resume in simple markdown (`#` name, `##` sections, `-` bullets) |
+| `key_changes` | string[] | Summary of the main improvements |
+
+Same error codes as `/analyze` (400 / 413 / 422 / 502 / 503).
+
+---
+
+## `POST /export`
+
+Render an improved resume (markdown) to a downloadable, ATS-friendly **DOCX**.
+
+**Request** — `application/json`
+```json
+{ "markdown": "# Jane Doe\n...", "filename": "resume_improved" }
+```
+
+**200 OK** — binary `.docx` (`Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document`) with a `Content-Disposition: attachment` header. `filename` is sanitized to a safe basename server-side.
+
+---
+
 ## Planned endpoints
 
 - `POST /analyses` + `GET /analyses/{id}` — async job model with polling.
-- `POST /analyses/{id}/export` — download an ATS-friendly PDF/DOCX.
+- **PDF** export (DOCX already ships via `POST /export`).
 - `POST /auth/login` — optional Google OAuth → JWT.
 
 These arrive with the async queue and persistence milestones. See

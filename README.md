@@ -114,9 +114,9 @@ See [api/README.md](api/README.md) for backend details.
 - [x] System architecture
 - [x] Architecture Decision Records
 - [x] MVP vertical slice: upload → parse → AI score (FastAPI + Next.js)
+- [x] AI rewrite + download improved resume (DOCX)
 - [ ] Deployed public demo
 - [ ] Analysis dashboard UI
-- [ ] AI rewrite + export
 - [ ] Accounts, history, and settings
 - [ ] Pricing & freemium limits
 
