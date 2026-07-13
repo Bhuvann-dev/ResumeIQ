@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -31,6 +31,17 @@ type CoverLetterResult = {
   cover_letter: string;
 };
 
+type HistoryEntry = {
+  id: number;
+  date: string;
+  fileName: string;
+  score: number;
+  role: string;
+  jdMatch: number | null;
+};
+
+const HISTORY_KEY = "resumeiq_history";
+
 const scoreColor = (n: number) =>
   n >= 75 ? "var(--success)" : n >= 50 ? "var(--warning)" : "var(--danger)";
 
@@ -59,6 +70,60 @@ export default function Home() {
   const [coverError, setCoverError] = useState<string | null>(null);
   const [editableCover, setEditableCover] = useState("");
   const [coverDone, setCoverDone] = useState(false);
+
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+
+  useEffect(() => {
+    const current = document.documentElement.getAttribute("data-theme");
+    if (current === "dark" || current === "light") setTheme(current);
+    try {
+      const saved = localStorage.getItem(HISTORY_KEY);
+      if (saved) setHistory(JSON.parse(saved) as HistoryEntry[]);
+    } catch {
+      /* ignore corrupt storage */
+    }
+  }, []);
+
+  function toggleTheme() {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    document.documentElement.setAttribute("data-theme", next);
+    try {
+      localStorage.setItem("theme", next);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function saveToHistory(r: AnalysisResult) {
+    const entry: HistoryEntry = {
+      id: Date.now(),
+      date: new Date().toISOString(),
+      fileName: file?.name ?? "resume",
+      score: r.ats_score,
+      role: r.detected_role,
+      jdMatch: r.jd_match_percent,
+    };
+    setHistory((prev) => {
+      const next = [entry, ...prev].slice(0, 20);
+      try {
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }
+
+  function clearHistory() {
+    setHistory([]);
+    try {
+      localStorage.removeItem(HISTORY_KEY);
+    } catch {
+      /* ignore */
+    }
+  }
 
   function pick(f: File | null) {
     setError(null);
@@ -94,7 +159,9 @@ export default function Home() {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.detail || `Request failed (${res.status})`);
       }
-      setResult((await res.json()) as AnalysisResult);
+      const data = (await res.json()) as AnalysisResult;
+      setResult(data);
+      saveToHistory(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong.");
     } finally {
@@ -177,8 +244,13 @@ export default function Home() {
 
   return (
     <main className="container">
-      <div className="brand">
-        Resume<span>IQ</span>
+      <div className="header-row">
+        <div className="brand">
+          Resume<span>IQ</span>
+        </div>
+        <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle dark mode" title="Toggle dark mode">
+          {theme === "dark" ? "☀️" : "🌙"}
+        </button>
       </div>
       <p className="tagline">Beat the ATS. Land the interview. Free resume analysis for freshers.</p>
 
@@ -320,6 +392,33 @@ export default function Home() {
               </div>
             </>
           )}
+        </div>
+      )}
+      {history.length > 0 && (
+        <div className="card">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <h3 style={{ margin: 0 }}>Your history</h3>
+            <button className="link-btn" onClick={clearHistory}>
+              Clear
+            </button>
+          </div>
+          <p style={{ color: "var(--muted)", fontSize: 13, marginTop: 4 }}>
+            Saved in your browser only — watch your score improve over time.
+          </p>
+          {history.map((h) => (
+            <div key={h.id} className="history-item">
+              <div>
+                <div style={{ fontWeight: 600 }}>{h.fileName}</div>
+                <div className="history-meta">
+                  {new Date(h.date).toLocaleString()} · {h.role}
+                  {h.jdMatch != null && <> · JD {h.jdMatch}%</>}
+                </div>
+              </div>
+              <div className="history-score" style={{ color: scoreColor(h.score) }}>
+                {h.score}
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </main>
