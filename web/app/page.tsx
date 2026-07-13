@@ -22,6 +22,11 @@ type AnalysisResult = {
   issues: Issue[];
 };
 
+type ImproveResult = {
+  improved_markdown: string;
+  key_changes: string[];
+};
+
 const scoreColor = (n: number) =>
   n >= 75 ? "var(--success)" : n >= 50 ? "var(--warning)" : "var(--danger)";
 
@@ -39,6 +44,11 @@ export default function Home() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [drag, setDrag] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const [improving, setImproving] = useState(false);
+  const [improved, setImproved] = useState<ImproveResult | null>(null);
+  const [improveError, setImproveError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   function pick(f: File | null) {
     setError(null);
@@ -59,6 +69,8 @@ export default function Home() {
     setLoading(true);
     setError(null);
     setResult(null);
+    setImproved(null);
+    setImproveError(null);
     try {
       const form = new FormData();
       form.append("file", file);
@@ -74,6 +86,53 @@ export default function Home() {
       setError(e instanceof Error ? e.message : "Something went wrong.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function improve() {
+    if (!file) return;
+    setImproving(true);
+    setImproveError(null);
+    setImproved(null);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      if (jd.trim()) form.append("job_description", jd.trim());
+
+      const res = await fetch(`${API_URL}/improve`, { method: "POST", body: form });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.detail || `Request failed (${res.status})`);
+      }
+      setImproved((await res.json()) as ImproveResult);
+    } catch (e) {
+      setImproveError(e instanceof Error ? e.message : "Something went wrong.");
+    } finally {
+      setImproving(false);
+    }
+  }
+
+  async function download() {
+    if (!improved) return;
+    setExporting(true);
+    try {
+      const res = await fetch(`${API_URL}/export`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ markdown: improved.improved_markdown, filename: "resume_improved" }),
+      });
+      if (!res.ok) throw new Error(`Export failed (${res.status})`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "resume_improved.docx";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setImproveError(e instanceof Error ? e.message : "Download failed.");
+    } finally {
+      setExporting(false);
     }
   }
 
@@ -132,6 +191,47 @@ export default function Home() {
       </div>
 
       {result && <Results result={result} />}
+
+      {result && (
+        <div className="card">
+          <h3 style={{ marginTop: 0 }}>Improve &amp; download</h3>
+          <p style={{ color: "var(--muted)", fontSize: 14, marginTop: 0 }}>
+            Let AI rewrite your resume into a clean, ATS-friendly version — using only your real facts — then download it as a .docx.
+          </p>
+          {!improved && (
+            <button onClick={improve} disabled={improving}>
+              {improving ? "Rewriting…" : "✨ Improve my resume"}
+            </button>
+          )}
+          {improving && <p className="spinner">Rewriting your resume — this takes a few seconds.</p>}
+          {improveError && <p className="error">{improveError}</p>}
+
+          {improved && (
+            <>
+              {improved.key_changes.length > 0 && (
+                <>
+                  <h4 style={{ marginBottom: 6 }}>What changed</h4>
+                  <ul style={{ marginTop: 0, fontSize: 14 }}>
+                    {improved.key_changes.map((c, i) => (
+                      <li key={i}>{c}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
+              <h4 style={{ marginBottom: 6 }}>Improved resume</h4>
+              <pre className="improved">{improved.improved_markdown}</pre>
+              <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+                <button onClick={download} disabled={exporting}>
+                  {exporting ? "Preparing…" : "⬇ Download .docx"}
+                </button>
+                <button onClick={improve} disabled={improving} style={{ background: "var(--muted)" }}>
+                  Re-run
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
     </main>
   );
 }

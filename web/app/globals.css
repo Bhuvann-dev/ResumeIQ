@@ -191,3 +191,18 @@ button:disabled {
   color: var(--muted);
   font-size: 15px;
 }
+
+.improved {
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  max-height: 460px;
+  overflow: auto;
+  margin: 0;
+}
