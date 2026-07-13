@@ -47,8 +47,9 @@ export default function Home() {
 
   const [improving, setImproving] = useState(false);
   const [improved, setImproved] = useState<ImproveResult | null>(null);
+  const [editableMarkdown, setEditableMarkdown] = useState("");
   const [improveError, setImproveError] = useState<string | null>(null);
-  const [exporting, setExporting] = useState(false);
+  const [exporting, setExporting] = useState<"pdf" | "docx" | null>(null);
 
   function pick(f: File | null) {
     setError(null);
@@ -104,7 +105,9 @@ export default function Home() {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.detail || `Request failed (${res.status})`);
       }
-      setImproved((await res.json()) as ImproveResult);
+      const data = (await res.json()) as ImproveResult;
+      setImproved(data);
+      setEditableMarkdown(data.improved_markdown);
     } catch (e) {
       setImproveError(e instanceof Error ? e.message : "Something went wrong.");
     } finally {
@@ -112,27 +115,28 @@ export default function Home() {
     }
   }
 
-  async function download() {
-    if (!improved) return;
-    setExporting(true);
+  async function download(format: "pdf" | "docx") {
+    if (!editableMarkdown.trim()) return;
+    setExporting(format);
+    setImproveError(null);
     try {
       const res = await fetch(`${API_URL}/export`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ markdown: improved.improved_markdown, filename: "resume_improved" }),
+        body: JSON.stringify({ markdown: editableMarkdown, filename: "resume_improved", format }),
       });
       if (!res.ok) throw new Error(`Export failed (${res.status})`);
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "resume_improved.docx";
+      a.download = `resume_improved.${format}`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
       setImproveError(e instanceof Error ? e.message : "Download failed.");
     } finally {
-      setExporting(false);
+      setExporting(null);
     }
   }
 
@@ -218,11 +222,22 @@ export default function Home() {
                   </ul>
                 </>
               )}
-              <h4 style={{ marginBottom: 6 }}>Improved resume</h4>
-              <pre className="improved">{improved.improved_markdown}</pre>
-              <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-                <button onClick={download} disabled={exporting}>
-                  {exporting ? "Preparing…" : "⬇ Download .docx"}
+              <h4 style={{ marginBottom: 2 }}>Improved resume</h4>
+              <p style={{ color: "var(--muted)", fontSize: 13, margin: "0 0 8px" }}>
+                Edit anything below before downloading — this text is what gets exported.
+              </p>
+              <textarea
+                className="improved"
+                value={editableMarkdown}
+                onChange={(e) => setEditableMarkdown(e.target.value)}
+                spellCheck={false}
+              />
+              <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
+                <button onClick={() => download("pdf")} disabled={exporting !== null}>
+                  {exporting === "pdf" ? "Preparing…" : "⬇ Download PDF"}
+                </button>
+                <button onClick={() => download("docx")} disabled={exporting !== null}>
+                  {exporting === "docx" ? "Preparing…" : "⬇ Download .docx"}
                 </button>
                 <button onClick={improve} disabled={improving} style={{ background: "var(--muted)" }}>
                   Re-run

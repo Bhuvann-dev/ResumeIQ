@@ -193,6 +193,11 @@ button:disabled {
 }
 
 .improved {
+  display: block;
+  width: 100%;
+  min-height: 340px;
+  max-height: 560px;
+  resize: vertical;
   white-space: pre-wrap;
   word-break: break-word;
   background: var(--bg);
@@ -202,7 +207,6 @@ button:disabled {
   font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
   font-size: 13px;
   line-height: 1.6;
-  max-height: 460px;
   overflow: auto;
   margin: 0;
 }
