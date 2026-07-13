@@ -11,7 +11,7 @@ import os
 
 from openai import OpenAI
 
-from models import AnalysisResult
+from models import AnalysisResult, ImproveResult
 
 # Model id. For OpenAI, gpt-4o-2024-08-06 supports Structured Outputs.
 # For Ollama, set this to a local model, e.g. "llama3.1".
@@ -93,6 +93,59 @@ def analyze(resume_text: str, job_description: str | None = None) -> AnalysisRes
     # return schema-valid JSON in `content` without the strict-parse path.
     if message.content:
         return AnalysisResult.model_validate_json(message.content)
+    raise RuntimeError("Model returned no structured output.")
+
+
+IMPROVE_SYSTEM_PROMPT = """\
+You are an expert resume writer who rewrites freshers' resumes to pass ATS \
+filters and impress recruiters.
+
+Rewrite the given resume into a clean, ATS-friendly version. Rules:
+- Keep it truthful — use ONLY facts present in the original. Never invent \
+  employers, dates, metrics, or skills.
+- Single-column, standard sections in this order when the content exists: \
+  Contact, Summary, Skills, Experience, Projects, Education, Certifications.
+- Start bullets with strong action verbs; make impact concrete where the \
+  original already implies it (do not fabricate numbers).
+- Remove buzzwords, fluff, and anything that breaks ATS parsing.
+- If a job description is provided, naturally incorporate its relevant keywords \
+  ONLY where they truthfully apply to the candidate.
+
+Output the rewritten resume as simple markdown:
+- `# Full Name` on the first line, then a contact line (email · phone · links).
+- `## Section Name` for each section.
+- `- ` for each bullet point.
+Do not add commentary — just the resume. Then list the key_changes you made.\
+"""
+
+
+def improve(resume_text: str, job_description: str | None = None) -> ImproveResult:
+    client = _client()
+
+    user_content = f"Rewrite this resume:\n\n---\n{resume_text}\n---"
+    if job_description:
+        user_content += (
+            "\n\nTailor it (truthfully) toward this job description:\n\n"
+            f"---\n{job_description}\n---"
+        )
+
+    completion = client.chat.completions.parse(
+        model=MODEL,
+        max_tokens=MAX_TOKENS,
+        messages=[
+            {"role": "system", "content": IMPROVE_SYSTEM_PROMPT},
+            {"role": "user", "content": user_content},
+        ],
+        response_format=ImproveResult,
+    )
+
+    message = completion.choices[0].message
+    if message.refusal:
+        raise RuntimeError(f"Model declined to rewrite: {message.refusal}")
+    if message.parsed is not None:
+        return message.parsed
+    if message.content:
+        return ImproveResult.model_validate_json(message.content)
     raise RuntimeError("Model returned no structured output.")
 
 

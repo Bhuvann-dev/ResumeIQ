@@ -39,3 +39,13 @@ class AnalysisResult(BaseModel):
         default_factory=list, description="Keywords from the JD absent in the resume"
     )
     issues: list[Issue] = Field(description="Categorized, actionable findings")
+
+
+class ImproveResult(BaseModel):
+    improved_markdown: str = Field(
+        description="The full rewritten, ATS-friendly resume in simple markdown "
+        "(# name, ## sections, - bullets)"
+    )
+    key_changes: list[str] = Field(
+        description="Short bullets summarizing the main improvements made"
+    )
