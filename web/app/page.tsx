@@ -27,6 +27,10 @@ type ImproveResult = {
   key_changes: string[];
 };
 
+type CoverLetterResult = {
+  cover_letter: string;
+};
+
 const scoreColor = (n: number) =>
   n >= 75 ? "var(--success)" : n >= 50 ? "var(--warning)" : "var(--danger)";
 
@@ -51,6 +55,11 @@ export default function Home() {
   const [improveError, setImproveError] = useState<string | null>(null);
   const [exporting, setExporting] = useState<"pdf" | "docx" | null>(null);
 
+  const [generatingCover, setGeneratingCover] = useState(false);
+  const [coverError, setCoverError] = useState<string | null>(null);
+  const [editableCover, setEditableCover] = useState("");
+  const [coverDone, setCoverDone] = useState(false);
+
   function pick(f: File | null) {
     setError(null);
     if (!f) return;
@@ -72,6 +81,9 @@ export default function Home() {
     setResult(null);
     setImproved(null);
     setImproveError(null);
+    setEditableCover("");
+    setCoverDone(false);
+    setCoverError(null);
     try {
       const form = new FormData();
       form.append("file", file);
@@ -115,28 +127,51 @@ export default function Home() {
     }
   }
 
-  async function download(format: "pdf" | "docx") {
-    if (!editableMarkdown.trim()) return;
+  async function download(markdown: string, format: "pdf" | "docx", base: string) {
+    if (!markdown.trim()) return;
     setExporting(format);
-    setImproveError(null);
     try {
       const res = await fetch(`${API_URL}/export`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ markdown: editableMarkdown, filename: "resume_improved", format }),
+        body: JSON.stringify({ markdown, filename: base, format }),
       });
       if (!res.ok) throw new Error(`Export failed (${res.status})`);
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `resume_improved.${format}`;
+      a.download = `${base}.${format}`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
-      setImproveError(e instanceof Error ? e.message : "Download failed.");
+      alert(e instanceof Error ? e.message : "Download failed.");
     } finally {
       setExporting(null);
+    }
+  }
+
+  async function generateCover() {
+    if (!file) return;
+    setGeneratingCover(true);
+    setCoverError(null);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      if (jd.trim()) form.append("job_description", jd.trim());
+
+      const res = await fetch(`${API_URL}/cover-letter`, { method: "POST", body: form });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.detail || `Request failed (${res.status})`);
+      }
+      const data = (await res.json()) as CoverLetterResult;
+      setEditableCover(data.cover_letter);
+      setCoverDone(true);
+    } catch (e) {
+      setCoverError(e instanceof Error ? e.message : "Something went wrong.");
+    } finally {
+      setGeneratingCover(false);
     }
   }
 
@@ -233,13 +268,53 @@ export default function Home() {
                 spellCheck={false}
               />
               <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
-                <button onClick={() => download("pdf")} disabled={exporting !== null}>
+                <button onClick={() => download(editableMarkdown, "pdf", "resume_improved")} disabled={exporting !== null}>
                   {exporting === "pdf" ? "Preparing…" : "⬇ Download PDF"}
                 </button>
-                <button onClick={() => download("docx")} disabled={exporting !== null}>
+                <button onClick={() => download(editableMarkdown, "docx", "resume_improved")} disabled={exporting !== null}>
                   {exporting === "docx" ? "Preparing…" : "⬇ Download .docx"}
                 </button>
                 <button onClick={improve} disabled={improving} style={{ background: "var(--muted)" }}>
+                  Re-run
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+      {result && (
+        <div className="card">
+          <h3 style={{ marginTop: 0 }}>Cover letter</h3>
+          <p style={{ color: "var(--muted)", fontSize: 14, marginTop: 0 }}>
+            Generate a cover letter tailored to the job — paste a job description above for the best result.
+          </p>
+          {!coverDone && (
+            <button onClick={generateCover} disabled={generatingCover}>
+              {generatingCover ? "Writing…" : "✍️ Generate cover letter"}
+            </button>
+          )}
+          {generatingCover && <p className="spinner">Writing your cover letter — this takes a few seconds.</p>}
+          {coverError && <p className="error">{coverError}</p>}
+
+          {coverDone && (
+            <>
+              <p style={{ color: "var(--muted)", fontSize: 13, margin: "0 0 8px" }}>
+                Edit anything below before downloading.
+              </p>
+              <textarea
+                className="improved"
+                value={editableCover}
+                onChange={(e) => setEditableCover(e.target.value)}
+                spellCheck={false}
+              />
+              <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
+                <button onClick={() => download(editableCover, "pdf", "cover_letter")} disabled={exporting !== null}>
+                  {exporting === "pdf" ? "Preparing…" : "⬇ Download PDF"}
+                </button>
+                <button onClick={() => download(editableCover, "docx", "cover_letter")} disabled={exporting !== null}>
+                  {exporting === "docx" ? "Preparing…" : "⬇ Download .docx"}
+                </button>
+                <button onClick={generateCover} disabled={generatingCover} style={{ background: "var(--muted)" }}>
                   Re-run
                 </button>
               </div>
