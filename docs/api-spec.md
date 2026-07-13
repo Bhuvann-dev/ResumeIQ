@@ -116,21 +116,28 @@ Same error codes as `/analyze` (400 / 413 / 422 / 502 / 503).
 
 ## `POST /export`
 
-Render an improved resume (markdown) to a downloadable, ATS-friendly **DOCX**.
+Render a resume (markdown, optionally edited by the user) to a downloadable,
+ATS-friendly **DOCX or PDF**. The PDF keeps URLs/emails as clickable links.
 
 **Request** — `application/json`
 ```json
-{ "markdown": "# Jane Doe\n...", "filename": "resume_improved" }
+{ "markdown": "# Jane Doe\n...", "filename": "resume_improved", "format": "pdf" }
 ```
 
-**200 OK** — binary `.docx` (`Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document`) with a `Content-Disposition: attachment` header. `filename` is sanitized to a safe basename server-side.
+| Field | Type | Default | Notes |
+|-------|------|---------|-------|
+| `markdown` | string | — | Resume in markdown (the edited text from the UI) |
+| `filename` | string | `resume_improved` | Sanitized to a safe basename server-side |
+| `format` | `"docx"` \| `"pdf"` | `docx` | Output format |
+
+**200 OK** — binary file with a `Content-Disposition: attachment` header. Content-Type is `application/pdf` or the DOCX media type accordingly.
 
 ---
 
 ## Planned endpoints
 
 - `POST /analyses` + `GET /analyses/{id}` — async job model with polling.
-- **PDF** export (DOCX already ships via `POST /export`).
+- Multiple resume templates for export (a single clean layout ships today).
 - `POST /auth/login` — optional Google OAuth → JWT.
 
 These arrive with the async queue and persistence milestones. See
