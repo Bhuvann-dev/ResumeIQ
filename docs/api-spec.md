@@ -114,6 +114,21 @@ Same error codes as `/analyze` (400 / 413 / 422 / 502 / 503).
 
 ---
 
+## `POST /cover-letter`
+
+Generate a professional cover letter tailored to the job, from the resume.
+
+**Request** — `multipart/form-data` (same fields as `/analyze`; a `job_description` is recommended for a tailored letter).
+
+**200 OK** — `CoverLetterResult`
+```json
+{ "cover_letter": "Dear Hiring Team,\n\nI am excited to apply for..." }
+```
+
+Plain paragraphs (no markdown headings/bullets), ~200–250 words, real facts only. Feed `cover_letter` straight into `POST /export` to download it. Same error codes as `/analyze`.
+
+---
+
 ## `POST /export`
 
 Render a resume (markdown, optionally edited by the user) to a downloadable,
