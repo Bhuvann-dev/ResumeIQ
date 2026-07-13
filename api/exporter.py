@@ -43,10 +43,13 @@ def _clean(text: str) -> str:
 def markdown_to_docx(markdown: str) -> bytes:
     doc = Document()
 
-    # A clean, ATS-safe base font.
-    normal = doc.styles["Normal"]
-    normal.font.name = "Calibri"
-    normal.font.size = Pt(11)
+    # Times New Roman across body and headings — clean, professional, ATS-safe.
+    for style_name in ("Normal", "Title", "Heading 1", "Heading 2", "Heading 3", "List Bullet"):
+        try:
+            doc.styles[style_name].font.name = "Times New Roman"
+        except KeyError:
+            pass
+    doc.styles["Normal"].font.size = Pt(11)
 
     for raw in markdown.splitlines():
         stripped = raw.strip()
@@ -86,7 +89,7 @@ def _latin1(text: str) -> str:
 
 def _render_contact(pdf: FPDF, text: str) -> None:
     """Center the contact line, rendering URLs/emails as clickable blue links."""
-    pdf.set_font("Helvetica", "", 9)
+    pdf.set_font("Times", "", 9)
     total = pdf.get_string_width(_latin1(text))
     pdf.set_x(max(pdf.l_margin, (pdf.w - total) / 2))
     for token in re.split(r"(\s+)", text):
@@ -125,12 +128,12 @@ def markdown_to_pdf(markdown: str) -> bytes:
                 continue
             hashes = len(heading.group(1))
             if hashes == 1:  # name / title
-                pdf.set_font("Helvetica", "B", 18)
-                pdf.cell(0, 9, _latin1(text), align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+                pdf.set_font("Times", "B", 20)
+                pdf.cell(0, 10, _latin1(text), align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
                 expect_contact = True
             elif hashes == 2:  # section
                 pdf.ln(3)
-                pdf.set_font("Helvetica", "B", 11)
+                pdf.set_font("Times", "B", 12)
                 pdf.cell(0, 6, _latin1(text.upper()), new_x=XPos.LMARGIN, new_y=YPos.NEXT)
                 y = pdf.get_y()
                 pdf.line(pdf.l_margin, y, pdf.w - pdf.r_margin, y)
@@ -138,7 +141,7 @@ def markdown_to_pdf(markdown: str) -> bytes:
                 expect_contact = False
             else:  # sub-heading (job/project title)
                 pdf.ln(1)
-                pdf.set_font("Helvetica", "B", 10)
+                pdf.set_font("Times", "B", 10)
                 pdf.multi_cell(0, 5, _latin1(text), new_x=XPos.LMARGIN, new_y=YPos.NEXT)
                 expect_contact = False
             continue
@@ -147,7 +150,7 @@ def markdown_to_pdf(markdown: str) -> bytes:
         if bullet:
             text = _clean(bullet.group(1))
             if text:
-                pdf.set_font("Helvetica", "", 10)
+                pdf.set_font("Times", "", 10)
                 pdf.set_x(pdf.l_margin + 4)
                 pdf.multi_cell(0, 5, _latin1("-  " + text), new_x=XPos.LMARGIN, new_y=YPos.NEXT)
             expect_contact = False
@@ -160,7 +163,7 @@ def markdown_to_pdf(markdown: str) -> bytes:
             _render_contact(pdf, text)
             expect_contact = False
         else:
-            pdf.set_font("Helvetica", "", 10)
+            pdf.set_font("Times", "", 10)
             pdf.multi_cell(0, 5, _latin1(text), new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
     return bytes(pdf.output())
