@@ -116,6 +116,7 @@ See [api/README.md](api/README.md) for backend details.
 - [x] MVP vertical slice: upload → parse → AI score (FastAPI + Next.js)
 - [x] AI rewrite + editable-before-export + download (DOCX & PDF w/ clickable links)
 - [x] Cover letter generator (tailored to the JD, editable, PDF/DOCX)
+- [x] Dark mode + local analysis history (browser, no account)
 - [ ] Deployed public demo
 - [ ] Analysis dashboard UI
 - [ ] Accounts, history, and settings
