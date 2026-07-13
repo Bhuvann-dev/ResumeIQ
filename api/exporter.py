@@ -82,8 +82,22 @@ def markdown_to_docx(markdown: str) -> bytes:
     return buf.getvalue()
 
 
+# Common Unicode punctuation -> ASCII, so latin-1 core fonts don't render "?".
+_TRANSLIT = {
+    "–": "-", "—": "-",      # en / em dash
+    "‘": "'", "’": "'",      # curly single quotes
+    "“": '"', "”": '"',      # curly double quotes
+    "…": "...",                    # ellipsis
+    "•": "-", "·": "-",       # bullets that slip past _BULLET
+    " ": " ",                      # non-breaking space
+}
+
+
 def _latin1(text: str) -> str:
-    # Core PDF fonts are latin-1; replace anything outside it rather than crash.
+    # Core PDF fonts are latin-1; transliterate common punctuation, then
+    # replace anything still outside latin-1 rather than crash.
+    for uni, ascii_ in _TRANSLIT.items():
+        text = text.replace(uni, ascii_)
     return text.encode("latin-1", "replace").decode("latin-1")
 
 
