@@ -104,6 +104,11 @@ filters and impress recruiters.
 Rewrite the given resume into a clean, ATS-friendly version. Rules:
 - Keep it truthful — use ONLY facts present in the original. Never invent \
   employers, dates, metrics, or skills.
+- Never invent, alter, or guess URLs, usernames, emails, or phone numbers — \
+  reproduce contact details EXACTLY as given. Use only URLs that appear in the \
+  resume (including any "Embedded links" list). If only the words "GitHub" or \
+  "LinkedIn" appear with no URL, keep them as plain words — do NOT make up a \
+  profile URL.
 - PRESERVE EVERYTHING. Keep every section the original has — including \
   Achievements, Languages, Certifications, Training, and Objective — and every \
   listed skill, project, and bullet. You may reorder, regroup, and reword for \

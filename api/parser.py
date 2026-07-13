@@ -51,9 +51,25 @@ def _resolve_kind(content_type: str, filename: str) -> str:
 
 def _extract_pdf(data: bytes) -> str:
     try:
+        pages: list[str] = []
+        links: list[str] = []
         with pdfplumber.open(io.BytesIO(data)) as pdf:
-            pages = [page.extract_text() or "" for page in pdf.pages]
-        return "\n".join(pages)
+            for page in pdf.pages:
+                pages.append(page.extract_text() or "")
+                # Real GitHub/LinkedIn URLs are often embedded hyperlinks, not
+                # visible text — capture them so the AI uses the actual links
+                # instead of inventing usernames.
+                for src in ((page.hyperlinks or []), (page.annots or [])):
+                    for item in src:
+                        uri = item.get("uri")
+                        if uri and uri not in links:
+                            links.append(uri)
+        text = "\n".join(pages)
+        if links:
+            text += "\n\nEmbedded links (use these exact URLs): " + " | ".join(links)
+        return text
+    except ParseError:
+        raise
     except Exception as exc:  # pdfplumber raises a variety of low-level errors
         raise ParseError("This PDF could not be read.") from exc
 
