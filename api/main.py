@@ -20,7 +20,7 @@ from pydantic import BaseModel, Field
 
 import analyzer
 from exporter import markdown_to_docx, markdown_to_pdf
-from models import AnalysisResult, ImproveResult
+from models import AnalysisResult, CoverLetterResult, ImproveResult
 from parser import ParseError, extract_text
 
 MAX_BYTES = 5 * 1024 * 1024  # 5 MB
@@ -91,6 +91,20 @@ async def improve_resume(
         return analyzer.improve(resume_text, jd)
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Rewrite failed: {exc}") from exc
+
+
+@app.post("/cover-letter", response_model=CoverLetterResult)
+async def cover_letter(
+    file: UploadFile = File(...),
+    job_description: str | None = Form(default=None),
+) -> CoverLetterResult:
+    resume_text = await _read_resume(file)
+    _require_ai()
+    jd = (job_description or "").strip() or None
+    try:
+        return analyzer.cover_letter(resume_text, jd)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Cover letter failed: {exc}") from exc
 
 
 class ExportRequest(BaseModel):

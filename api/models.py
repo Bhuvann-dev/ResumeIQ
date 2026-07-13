@@ -50,3 +50,9 @@ class ImproveResult(BaseModel):
         default_factory=list,
         description="Short bullets summarizing the main improvements made",
     )
+
+
+class CoverLetterResult(BaseModel):
+    cover_letter: str = Field(
+        description="A tailored, professional cover letter in plain paragraphs"
+    )

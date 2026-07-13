@@ -11,7 +11,7 @@ import os
 
 from openai import OpenAI
 
-from models import AnalysisResult, ImproveResult
+from models import AnalysisResult, CoverLetterResult, ImproveResult
 
 # Model id. For OpenAI, gpt-4o-2024-08-06 supports Structured Outputs.
 # For Ollama, set this to a local model, e.g. "llama3.1".
@@ -192,6 +192,56 @@ def improve(resume_text: str, job_description: str | None = None) -> ImproveResu
     if not markdown:
         raise RuntimeError("Model returned no content.")
     return ImproveResult(improved_markdown=markdown, key_changes=[])
+
+
+COVER_LETTER_SYSTEM_PROMPT = """\
+You are an expert career writer. Write a professional, concise cover letter for \
+the candidate, based ONLY on facts in their resume.
+
+Rules:
+- 3 short paragraphs, ~200-250 words total. First person.
+- Tailor it to the job description if one is provided; otherwise write for the \
+  candidate's likely target role.
+- Use only real facts from the resume. Never invent employers, metrics, or \
+  skills, and never use bracketed placeholders like "[Company]" — if the \
+  company or hiring manager is unknown, address "the hiring team" and refer to \
+  "the role" / "your team" naturally.
+- Structure: a greeting, an opening that states interest and fit, a middle \
+  paragraph with concrete evidence from the resume, a closing with a call to \
+  action, then a sign-off with the candidate's name.
+- Output only the letter as plain paragraphs — no markdown headings or bullets.\
+"""
+
+
+def cover_letter(resume_text: str, job_description: str | None = None) -> CoverLetterResult:
+    client = _client()
+
+    user_content = f"Candidate resume:\n\n---\n{resume_text}\n---"
+    if job_description:
+        user_content += f"\n\nTarget job description:\n\n---\n{job_description}\n---"
+    else:
+        user_content += (
+            "\n\nNo job description provided — write a strong general cover letter "
+            "for the candidate's likely target role."
+        )
+
+    completion = client.chat.completions.create(
+        model=MODEL,
+        max_tokens=2000,
+        temperature=0,
+        messages=[
+            {"role": "system", "content": COVER_LETTER_SYSTEM_PROMPT},
+            {"role": "user", "content": user_content},
+        ],
+    )
+
+    message = completion.choices[0].message
+    if getattr(message, "refusal", None):
+        raise RuntimeError(f"Model declined: {message.refusal}")
+    text = _strip_code_fence(message.content or "")
+    if not text:
+        raise RuntimeError("Model returned no content.")
+    return CoverLetterResult(cover_letter=text)
 
 
 def ai_configured() -> bool:
