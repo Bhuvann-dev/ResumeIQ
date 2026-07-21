@@ -49,14 +49,6 @@ const ANALYZE_MESSAGES = [
   "Scoring your resume…",
 ];
 
-type Tab = "analysis" | "improve" | "cover" | "history";
-const TABS: { id: Tab; label: string }[] = [
-  { id: "analysis", label: "Analysis" },
-  { id: "improve", label: "Improve" },
-  { id: "cover", label: "Cover letter" },
-  { id: "history", label: "History" },
-];
-
 const scoreColor = (n: number) =>
   n >= 75 ? "var(--success)" : n >= 50 ? "var(--warning)" : "var(--danger)";
 
@@ -88,7 +80,6 @@ export default function Home() {
 
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [history, setHistory] = useState<HistoryEntry[]>([]);
-  const [activeTab, setActiveTab] = useState<Tab>("analysis");
   const [statusIdx, setStatusIdx] = useState(0);
 
   useEffect(() => {
@@ -175,7 +166,6 @@ export default function Home() {
     setEditableCover("");
     setCoverDone(false);
     setCoverError(null);
-    setActiveTab("analysis");
     try {
       const form = new FormData();
       form.append("file", file);
@@ -335,45 +325,45 @@ export default function Home() {
 
       {loading && <ResultsSkeleton />}
 
+      {result && <Results result={result} />}
+
       {result && (
-        <div className="tabs" role="tablist">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              role="tab"
-              aria-selected={activeTab === t.id}
-              className={`tab${activeTab === t.id ? " active" : ""}`}
-              onClick={() => setActiveTab(t.id)}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {result && activeTab === "analysis" && <Results result={result} />}
-
-      {result && activeTab === "improve" && (
         <div className="card">
-          <h3 style={{ marginTop: 0 }}>Improve &amp; download</h3>
+          <h3 style={{ marginTop: 0 }}>Next steps</h3>
           <p style={{ color: "var(--muted)", fontSize: 14, marginTop: 0 }}>
-            Let AI rewrite your resume into a clean, ATS-friendly version — using only your real facts — then download it as a .docx.
+            Rewrite your resume to be ATS-friendly, or generate a matching cover letter — both use only your real facts.
           </p>
-          {!improved && (
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <button onClick={improve} disabled={improving}>
-              {improving ? <>Rewriting<span className="dots" /></> : "✨ Improve my resume"}
+              {improving ? (
+                <>Rewriting<span className="dots" /></>
+              ) : improved ? (
+                "✨ Re-improve resume"
+              ) : (
+                "✨ Improve my resume"
+              )}
             </button>
-          )}
+            <button className="btn-tonal" onClick={generateCover} disabled={generatingCover}>
+              {generatingCover ? (
+                <>Writing<span className="dots" /></>
+              ) : coverDone ? (
+                "✍️ Rewrite cover letter"
+              ) : (
+                "✍️ Write a cover letter"
+              )}
+            </button>
+          </div>
+
           {improving && (
             <>
-              <p className="spinner">Rewriting your resume — this takes a few seconds.</p>
+              <div className="progress" role="progressbar" aria-label="Rewriting" />
               <TextSkeleton />
             </>
           )}
           {improveError && <p className="error">{improveError}</p>}
 
-          {improved && (
-            <>
+          {improved && !improving && (
+            <div style={{ marginTop: 20 }}>
               {improved.key_changes.length > 0 && (
                 <>
                   <h4 style={{ marginBottom: 6 }}>What changed</h4>
@@ -401,35 +391,21 @@ export default function Home() {
                 <button className="btn-tonal" onClick={() => download(editableMarkdown, "docx", "resume_improved")} disabled={exporting !== null}>
                   {exporting === "docx" ? "Preparing…" : "⬇ Download .docx"}
                 </button>
-                <button className="btn-outline" onClick={improve} disabled={improving}>
-                  Re-run
-                </button>
               </div>
-            </>
+            </div>
           )}
-        </div>
-      )}
-      {result && activeTab === "cover" && (
-        <div className="card">
-          <h3 style={{ marginTop: 0 }}>Cover letter</h3>
-          <p style={{ color: "var(--muted)", fontSize: 14, marginTop: 0 }}>
-            Generate a cover letter tailored to the job — paste a job description above for the best result.
-          </p>
-          {!coverDone && (
-            <button onClick={generateCover} disabled={generatingCover}>
-              {generatingCover ? <>Writing<span className="dots" /></> : "✍️ Generate cover letter"}
-            </button>
-          )}
+
           {generatingCover && (
             <>
-              <p className="spinner">Writing your cover letter — this takes a few seconds.</p>
+              <div className="progress" role="progressbar" aria-label="Writing cover letter" />
               <TextSkeleton />
             </>
           )}
           {coverError && <p className="error">{coverError}</p>}
 
-          {coverDone && (
-            <>
+          {coverDone && !generatingCover && (
+            <div style={{ marginTop: 20 }}>
+              <h4 style={{ marginBottom: 2 }}>Cover letter</h4>
               <p style={{ color: "var(--muted)", fontSize: 13, margin: "0 0 8px" }}>
                 Edit anything below before downloading.
               </p>
@@ -446,15 +422,14 @@ export default function Home() {
                 <button className="btn-tonal" onClick={() => download(editableCover, "docx", "cover_letter")} disabled={exporting !== null}>
                   {exporting === "docx" ? "Preparing…" : "⬇ Download .docx"}
                 </button>
-                <button className="btn-outline" onClick={generateCover} disabled={generatingCover}>
-                  Re-run
-                </button>
               </div>
-            </>
+            </div>
           )}
         </div>
       )}
-      {((result && activeTab === "history") || (!result && history.length > 0)) && (
+
+      {result && <IssuesCard result={result} />}
+      {history.length > 0 && (
         <div className="card">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <h3 style={{ margin: 0 }}>Your history</h3>
@@ -558,21 +533,20 @@ function Results({ result }: { result: AnalysisResult }) {
   ];
 
   return (
-    <>
-      <div className="card">
-        <div className="score-header">
-          <ScoreGauge score={result.ats_score} />
-          <div style={{ flex: 1, minWidth: 220 }}>
-            <p style={{ marginTop: 0 }}>{result.summary}</p>
-            <p style={{ color: "var(--muted)", fontSize: 14, marginBottom: 0 }}>
-              Detected role: <strong>{result.detected_role}</strong>
-              {result.jd_match_percent != null && <> · JD match: <strong>{result.jd_match_percent}%</strong></>}
-            </p>
-          </div>
+    <div className="card">
+      <div className="score-header">
+        <ScoreGauge score={result.ats_score} />
+        <div style={{ flex: 1, minWidth: 220 }}>
+          <p style={{ marginTop: 0 }}>{result.summary}</p>
+          <p style={{ color: "var(--muted)", fontSize: 14, marginBottom: 0 }}>
+            Detected role: <strong>{result.detected_role}</strong>
+            {result.jd_match_percent != null && <> · JD match: <strong>{result.jd_match_percent}%</strong></>}
+          </p>
         </div>
+      </div>
 
-        <div style={{ marginTop: 20 }}>
-          {dims.map(([name, n]) => (
+      <div style={{ marginTop: 20 }}>
+        {dims.map(([name, n]) => (
           <div key={name}>
             <div className="dim-row">
               <span>{name}</span>
@@ -584,31 +558,34 @@ function Results({ result }: { result: AnalysisResult }) {
           </div>
         ))}
 
-          {result.missing_keywords.length > 0 && (
-            <p style={{ fontSize: 14 }}>
-              <strong>Missing keywords:</strong> {result.missing_keywords.join(", ")}
-            </p>
-          )}
-        </div>
+        {result.missing_keywords.length > 0 && (
+          <p style={{ fontSize: 14 }}>
+            <strong>Missing keywords:</strong> {result.missing_keywords.join(", ")}
+          </p>
+        )}
       </div>
+    </div>
+  );
+}
 
-      <div className="card">
-        <h3 style={{ marginTop: 0 }}>Issues ({result.issues.length})</h3>
-        {result.issues.map((issue, i) => (
-          <div key={i} className="issue" style={{ borderLeftColor: catColor[issue.category] }}>
-            <h4>
-              <span className="tag" style={{ background: catColor[issue.category], color: "#fff" }}>
-                {issue.category}
-              </span>
-              {issue.title}
-            </h4>
-            <p>{issue.message}</p>
-            <p className="fix">
-              <strong>Fix:</strong> {issue.suggestion}
-            </p>
-          </div>
-        ))}
-      </div>
-    </>
+function IssuesCard({ result }: { result: AnalysisResult }) {
+  return (
+    <div className="card">
+      <h3 style={{ marginTop: 0 }}>Issues ({result.issues.length})</h3>
+      {result.issues.map((issue, i) => (
+        <div key={i} className="issue" style={{ borderLeftColor: catColor[issue.category] }}>
+          <h4>
+            <span className="tag" style={{ background: catColor[issue.category], color: "#fff" }}>
+              {issue.category}
+            </span>
+            {issue.title}
+          </h4>
+          <p>{issue.message}</p>
+          <p className="fix">
+            <strong>Fix:</strong> {issue.suggestion}
+          </p>
+        </div>
+      ))}
+    </div>
   );
 }

@@ -261,39 +261,6 @@ button:disabled {
   margin-top: 12px;
 }
 
-/* Material tab bar — segments the flow instead of one endless scroll */
-.tabs {
-  display: flex;
-  gap: 4px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 16px;
-  overflow-x: auto;
-}
-
-.tab {
-  background: none;
-  color: var(--muted);
-  border: 0;
-  border-radius: 0;
-  border-bottom: 2px solid transparent;
-  padding: 12px 16px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.tab:hover:not(:disabled) {
-  background: var(--surface-container);
-  box-shadow: none;
-  color: var(--text);
-}
-
-.tab.active {
-  color: var(--primary);
-  border-bottom-color: var(--primary);
-}
-
 /* Indeterminate progress bar (loading feedback near the button) */
 .progress {
   height: 4px;
