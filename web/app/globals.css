@@ -214,6 +214,29 @@ button:disabled {
   box-shadow: none;
 }
 
+/* Button hierarchy: one filled primary per view; the rest tonal / outlined. */
+.btn-tonal {
+  background: var(--primary-container);
+  color: var(--on-primary-container);
+}
+
+.btn-tonal:hover:not(:disabled) {
+  background: var(--primary-container);
+  filter: brightness(0.97);
+  box-shadow: var(--shadow-1);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--border);
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: var(--surface-container);
+  box-shadow: none;
+}
+
 .link-btn {
   background: none;
   border: 0;
@@ -244,18 +267,49 @@ button:disabled {
 }
 
 /* ---- Score ---- */
-.score-ring {
+.score-header {
   display: flex;
-  align-items: baseline;
-  gap: 10px;
+  gap: 24px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
-.score-num {
-  font-size: 56px;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  line-height: 1;
+.gauge {
+  flex-shrink: 0;
 }
+
+.gauge-num {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.gauge-label {
+  font-size: 12px;
+  fill: var(--muted);
+  font-weight: 600;
+}
+
+.gauge-arc {
+  transition: stroke-dasharray 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Skeleton loaders */
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-container) 25%, var(--border) 37%, var(--surface-container) 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.4s ease infinite;
+  border-radius: 8px;
+}
+
+@keyframes shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: 0 0; }
+}
+
+.skel-gauge { width: 132px; height: 132px; border-radius: 50%; flex-shrink: 0; }
+.skel-line { height: 14px; margin: 9px 0; }
+.skel-bar { height: 26px; margin: 12px 0; border-radius: 8px; }
 
 .bar {
   height: 8px;

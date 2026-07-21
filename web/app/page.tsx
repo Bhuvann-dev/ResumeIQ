@@ -301,6 +301,8 @@ export default function Home() {
         {error && <p className="error">{error}</p>}
       </div>
 
+      {loading && <ResultsSkeleton />}
+
       {result && <Results result={result} />}
 
       {result && (
@@ -314,7 +316,12 @@ export default function Home() {
               {improving ? "Rewriting…" : "✨ Improve my resume"}
             </button>
           )}
-          {improving && <p className="spinner">Rewriting your resume — this takes a few seconds.</p>}
+          {improving && (
+            <>
+              <p className="spinner">Rewriting your resume — this takes a few seconds.</p>
+              <TextSkeleton />
+            </>
+          )}
           {improveError && <p className="error">{improveError}</p>}
 
           {improved && (
@@ -343,10 +350,10 @@ export default function Home() {
                 <button onClick={() => download(editableMarkdown, "pdf", "resume_improved")} disabled={exporting !== null}>
                   {exporting === "pdf" ? "Preparing…" : "⬇ Download PDF"}
                 </button>
-                <button onClick={() => download(editableMarkdown, "docx", "resume_improved")} disabled={exporting !== null}>
+                <button className="btn-tonal" onClick={() => download(editableMarkdown, "docx", "resume_improved")} disabled={exporting !== null}>
                   {exporting === "docx" ? "Preparing…" : "⬇ Download .docx"}
                 </button>
-                <button onClick={improve} disabled={improving} style={{ background: "var(--muted)" }}>
+                <button className="btn-outline" onClick={improve} disabled={improving}>
                   Re-run
                 </button>
               </div>
@@ -365,7 +372,12 @@ export default function Home() {
               {generatingCover ? "Writing…" : "✍️ Generate cover letter"}
             </button>
           )}
-          {generatingCover && <p className="spinner">Writing your cover letter — this takes a few seconds.</p>}
+          {generatingCover && (
+            <>
+              <p className="spinner">Writing your cover letter — this takes a few seconds.</p>
+              <TextSkeleton />
+            </>
+          )}
           {coverError && <p className="error">{coverError}</p>}
 
           {coverDone && (
@@ -383,10 +395,10 @@ export default function Home() {
                 <button onClick={() => download(editableCover, "pdf", "cover_letter")} disabled={exporting !== null}>
                   {exporting === "pdf" ? "Preparing…" : "⬇ Download PDF"}
                 </button>
-                <button onClick={() => download(editableCover, "docx", "cover_letter")} disabled={exporting !== null}>
+                <button className="btn-tonal" onClick={() => download(editableCover, "docx", "cover_letter")} disabled={exporting !== null}>
                   {exporting === "docx" ? "Preparing…" : "⬇ Download .docx"}
                 </button>
-                <button onClick={generateCover} disabled={generatingCover} style={{ background: "var(--muted)" }}>
+                <button className="btn-outline" onClick={generateCover} disabled={generatingCover}>
                   Re-run
                 </button>
               </div>
@@ -425,6 +437,70 @@ export default function Home() {
   );
 }
 
+function ScoreGauge({ score }: { score: number }) {
+  const r = 54;
+  const circumference = 2 * Math.PI * r;
+  const pct = Math.max(0, Math.min(100, score));
+  const dash = (pct / 100) * circumference;
+  const color = scoreColor(score);
+  return (
+    <div className="gauge">
+      <svg width="140" height="140" viewBox="0 0 140 140" role="img" aria-label={`ATS score ${score} of 100`}>
+        <circle cx="70" cy="70" r={r} fill="none" stroke="var(--surface-container)" strokeWidth="12" />
+        <circle
+          cx="70"
+          cy="70"
+          r={r}
+          fill="none"
+          stroke={color}
+          strokeWidth="12"
+          strokeLinecap="round"
+          strokeDasharray={`${dash} ${circumference}`}
+          transform="rotate(-90 70 70)"
+          className="gauge-arc"
+        />
+        <text x="70" y="68" textAnchor="middle" dominantBaseline="central" className="gauge-num" fill={color}>
+          {score}
+        </text>
+        <text x="70" y="92" textAnchor="middle" className="gauge-label">
+          / 100
+        </text>
+      </svg>
+    </div>
+  );
+}
+
+function ResultsSkeleton() {
+  return (
+    <div className="card" aria-hidden="true">
+      <div className="score-header">
+        <div className="skeleton skel-gauge" />
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <div className="skeleton skel-line" style={{ width: "92%" }} />
+          <div className="skeleton skel-line" style={{ width: "78%" }} />
+          <div className="skeleton skel-line" style={{ width: "45%" }} />
+        </div>
+      </div>
+      <div style={{ marginTop: 20 }}>
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="skeleton skel-bar" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TextSkeleton() {
+  const widths = ["95%", "88%", "92%", "70%", "85%", "60%"];
+  return (
+    <div style={{ marginTop: 12 }} aria-hidden="true">
+      {widths.map((w, i) => (
+        <div key={i} className="skeleton skel-line" style={{ width: w }} />
+      ))}
+    </div>
+  );
+}
+
 function Results({ result }: { result: AnalysisResult }) {
   const dims: [string, number][] = [
     ["Format", result.dimension_scores.format],
@@ -436,19 +512,19 @@ function Results({ result }: { result: AnalysisResult }) {
   return (
     <>
       <div className="card">
-        <div className="score-ring">
-          <span className="score-num" style={{ color: scoreColor(result.ats_score) }}>
-            {result.ats_score}
-          </span>
-          <span style={{ color: "var(--muted)" }}>/ 100 ATS score</span>
+        <div className="score-header">
+          <ScoreGauge score={result.ats_score} />
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <p style={{ marginTop: 0 }}>{result.summary}</p>
+            <p style={{ color: "var(--muted)", fontSize: 14, marginBottom: 0 }}>
+              Detected role: <strong>{result.detected_role}</strong>
+              {result.jd_match_percent != null && <> · JD match: <strong>{result.jd_match_percent}%</strong></>}
+            </p>
+          </div>
         </div>
-        <p>{result.summary}</p>
-        <p style={{ color: "var(--muted)", fontSize: 14 }}>
-          Detected role: <strong>{result.detected_role}</strong>
-          {result.jd_match_percent != null && <> · JD match: <strong>{result.jd_match_percent}%</strong></>}
-        </p>
 
-        {dims.map(([name, n]) => (
+        <div style={{ marginTop: 20 }}>
+          {dims.map(([name, n]) => (
           <div key={name}>
             <div className="dim-row">
               <span>{name}</span>
@@ -460,11 +536,12 @@ function Results({ result }: { result: AnalysisResult }) {
           </div>
         ))}
 
-        {result.missing_keywords.length > 0 && (
-          <p style={{ fontSize: 14 }}>
-            <strong>Missing keywords:</strong> {result.missing_keywords.join(", ")}
-          </p>
-        )}
+          {result.missing_keywords.length > 0 && (
+            <p style={{ fontSize: 14 }}>
+              <strong>Missing keywords:</strong> {result.missing_keywords.join(", ")}
+            </p>
+          )}
+        </div>
       </div>
 
       <div className="card">
