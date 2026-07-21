@@ -1,31 +1,48 @@
+/* ResumeIQ — Material Design 3 / Google-inspired design system.
+   Color roles flip cleanly between light and dark; type, spacing (8dp grid),
+   elevation, shape (pill buttons, rounded cards), and motion follow M3. */
+
 :root {
-  --primary: #4f46e5;
-  --primary-dark: #4338ca;
-  --accent: #06b6d4;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --danger: #ef4444;
-  --bg: #f8fafc;
+  --primary: #1a73e8;          /* Google Blue */
+  --primary-hover: #1b66c9;
+  --on-primary: #ffffff;
+  --primary-container: #e8f0fe;
+  --on-primary-container: #174ea6;
+  --accent: #1a73e8;
+  --success: #1e8e3e;
+  --warning: #f9ab00;
+  --danger: #d93025;
+  --bg: #f8f9fa;               /* Grey 50 */
   --surface: #ffffff;
-  --text: #0f172a;
-  --muted: #64748b;
-  --border: #e2e8f0;
-  --dropzone-hover: #eef2ff;
+  --surface-container: #f1f3f4;
+  --text: #202124;             /* Grey 900 */
+  --muted: #5f6368;            /* Grey 600 */
+  --border: #dadce0;           /* Grey 300 */
+  --dropzone-hover: #e8f0fe;
+  --shadow-1: 0 1px 2px rgba(60, 64, 67, 0.1), 0 1px 3px 1px rgba(60, 64, 67, 0.06);
+  --shadow-2: 0 1px 3px rgba(60, 64, 67, 0.12), 0 4px 8px 3px rgba(60, 64, 67, 0.08);
+  --radius: 16px;
 }
 
 [data-theme="dark"] {
-  --primary: #818cf8;
-  --primary-dark: #6366f1;
-  --accent: #22d3ee;
-  --success: #34d399;
-  --warning: #fbbf24;
-  --danger: #f87171;
-  --bg: #0b1120;
-  --surface: #151b2b;
-  --text: #e2e8f0;
-  --muted: #94a3b8;
-  --border: #1e293b;
-  --dropzone-hover: #1e293b;
+  --primary: #8ab4f8;
+  --primary-hover: #a6c6fb;
+  --on-primary: #062e6f;
+  --primary-container: #0842a0;
+  --on-primary-container: #d3e3fd;
+  --accent: #8ab4f8;
+  --success: #81c995;
+  --warning: #fdd663;
+  --danger: #f28b82;
+  --bg: #1b1c1d;
+  --surface: #202124;
+  --surface-container: #292a2d;
+  --text: #e8eaed;
+  --muted: #9aa0a6;
+  --border: #3c4043;
+  --dropzone-hover: #283142;
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px 1px rgba(0, 0, 0, 0.15);
+  --shadow-2: 0 1px 3px rgba(0, 0, 0, 0.4), 0 4px 8px 3px rgba(0, 0, 0, 0.25);
 }
 
 * {
@@ -36,21 +53,36 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+  font-family: "Google Sans", "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
   transition: background 0.2s ease, color 0.2s ease;
 }
 
+*:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
 .container {
-  max-width: 760px;
+  max-width: 720px;
   margin: 0 auto;
-  padding: 48px 20px 96px;
+  padding: 32px 20px 96px;
+}
+
+/* ---- App bar ---- */
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .brand {
-  font-size: 28px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .brand span {
@@ -59,24 +91,38 @@ body {
 
 .tagline {
   color: var(--muted);
-  margin: 4px 0 32px;
+  margin: 4px 0 28px;
+  font-size: 15px;
 }
 
+/* ---- Elevated surfaces (cards) ---- */
 .card {
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius);
   padding: 24px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-1);
 }
 
+h3 {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+h4 {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* ---- Dropzone ---- */
 .dropzone {
   border: 2px dashed var(--border);
   border-radius: 12px;
-  padding: 36px 20px;
+  padding: 40px 20px;
   text-align: center;
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
 
 .dropzone:hover,
@@ -91,46 +137,99 @@ body {
 
 .file-name {
   margin-top: 12px;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--muted);
 }
 
+/* ---- Text fields (outlined) ---- */
 textarea {
   width: 100%;
   min-height: 90px;
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 12px;
+  border-radius: 12px;
+  padding: 14px;
   font: inherit;
   resize: vertical;
+  background: var(--surface);
+  color: var(--text);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
 }
 
 label {
   display: block;
   font-weight: 600;
-  font-size: 14px;
-  margin: 16px 0 6px;
+  font-size: 13px;
+  margin: 18px 0 6px;
+  color: var(--text);
 }
 
+/* ---- Buttons (filled, pill, state layer) ---- */
 button {
   background: var(--primary);
-  color: #fff;
+  color: var(--on-primary);
   border: 0;
-  border-radius: 10px;
-  padding: 12px 22px;
-  font-size: 15px;
+  border-radius: 999px;
+  padding: 11px 24px;
+  font-size: 14px;
   font-weight: 600;
+  letter-spacing: 0.01em;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: box-shadow 0.15s ease, background 0.15s ease, filter 0.1s ease;
 }
 
 button:hover:not(:disabled) {
-  background: var(--primary-dark);
+  background: var(--primary-hover);
+  box-shadow: var(--shadow-1);
+}
+
+button:active:not(:disabled) {
+  filter: brightness(0.96);
 }
 
 button:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
+}
+
+.theme-toggle {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.theme-toggle:hover:not(:disabled) {
+  background: var(--surface-container);
+  box-shadow: none;
+}
+
+.link-btn {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.link-btn:hover {
+  color: var(--danger);
+  background: none;
+  box-shadow: none;
 }
 
 .error {
@@ -139,6 +238,12 @@ button:disabled {
   margin-top: 12px;
 }
 
+.spinner {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* ---- Score ---- */
 .score-ring {
   display: flex;
   align-items: baseline;
@@ -146,42 +251,45 @@ button:disabled {
 }
 
 .score-num {
-  font-size: 52px;
-  font-weight: 800;
+  font-size: 56px;
+  font-weight: 700;
   letter-spacing: -0.03em;
+  line-height: 1;
 }
 
 .bar {
   height: 8px;
-  border-radius: 4px;
-  background: var(--border);
+  border-radius: 999px;
+  background: var(--surface-container);
   overflow: hidden;
-  margin: 4px 0 12px;
+  margin: 4px 0 14px;
 }
 
 .bar > div {
   height: 100%;
-  border-radius: 4px;
+  border-radius: 999px;
+  transition: width 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .dim-row {
   display: flex;
   justify-content: space-between;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
 }
 
+/* ---- Issues ---- */
 .issue {
   border: 1px solid var(--border);
   border-left-width: 4px;
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 14px 16px;
   margin-bottom: 12px;
+  background: var(--surface);
 }
 
 .issue h4 {
   margin: 0 0 4px;
-  font-size: 15px;
 }
 
 .issue p {
@@ -193,52 +301,53 @@ button:disabled {
   color: var(--muted);
 }
 
+/* ---- Chips ---- */
 .tag {
   display: inline-block;
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  padding: 2px 8px;
+  padding: 3px 10px;
   border-radius: 999px;
   margin-right: 8px;
 }
 
-.spinner {
-  color: var(--muted);
-  font-size: 15px;
-}
-
-.header-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.theme-toggle {
-  background: var(--surface);
-  color: var(--text);
+/* ---- Editable resume / cover-letter box ---- */
+.improved {
+  display: block;
+  width: 100%;
+  min-height: 340px;
+  max-height: 560px;
+  resize: vertical;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: var(--surface-container);
   border: 1px solid var(--border);
-  border-radius: 999px;
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  font-size: 18px;
-  line-height: 1;
-  cursor: pointer;
+  border-radius: 12px;
+  padding: 16px;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow: auto;
+  margin: 0;
+  color: var(--text);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.theme-toggle:hover:not(:disabled) {
-  background: var(--dropzone-hover);
+.improved:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
 }
 
+/* ---- History ---- */
 .history-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 0;
+  padding: 12px 0;
   border-top: 1px solid var(--border);
   font-size: 14px;
 }
@@ -248,46 +357,13 @@ button:disabled {
 }
 
 .history-score {
-  font-weight: 800;
-  font-size: 18px;
-  min-width: 34px;
+  font-weight: 700;
+  font-size: 20px;
+  min-width: 36px;
   text-align: right;
 }
 
 .history-meta {
   color: var(--muted);
   font-size: 12px;
-}
-
-.link-btn {
-  background: none;
-  border: 0;
-  color: var(--muted);
-  font-size: 13px;
-  padding: 0;
-  cursor: pointer;
-  text-decoration: underline;
-}
-
-.link-btn:hover {
-  color: var(--danger);
-}
-
-.improved {
-  display: block;
-  width: 100%;
-  min-height: 340px;
-  max-height: 560px;
-  resize: vertical;
-  white-space: pre-wrap;
-  word-break: break-word;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 16px;
-  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
-  font-size: 13px;
-  line-height: 1.6;
-  overflow: auto;
-  margin: 0;
 }
