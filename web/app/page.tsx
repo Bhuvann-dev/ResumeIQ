@@ -42,6 +42,21 @@ type HistoryEntry = {
 
 const HISTORY_KEY = "resumeiq_history";
 
+const ANALYZE_MESSAGES = [
+  "Reading your resume…",
+  "Checking ATS formatting…",
+  "Matching keywords…",
+  "Scoring your resume…",
+];
+
+type Tab = "analysis" | "improve" | "cover" | "history";
+const TABS: { id: Tab; label: string }[] = [
+  { id: "analysis", label: "Analysis" },
+  { id: "improve", label: "Improve" },
+  { id: "cover", label: "Cover letter" },
+  { id: "history", label: "History" },
+];
+
 const scoreColor = (n: number) =>
   n >= 75 ? "var(--success)" : n >= 50 ? "var(--warning)" : "var(--danger)";
 
@@ -73,6 +88,17 @@ export default function Home() {
 
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [activeTab, setActiveTab] = useState<Tab>("analysis");
+  const [statusIdx, setStatusIdx] = useState(0);
+
+  useEffect(() => {
+    if (!loading) {
+      setStatusIdx(0);
+      return;
+    }
+    const id = setInterval(() => setStatusIdx((i) => (i + 1) % ANALYZE_MESSAGES.length), 2500);
+    return () => clearInterval(id);
+  }, [loading]);
 
   useEffect(() => {
     const current = document.documentElement.getAttribute("data-theme");
@@ -149,6 +175,7 @@ export default function Home() {
     setEditableCover("");
     setCoverDone(false);
     setCoverError(null);
+    setActiveTab("analysis");
     try {
       const form = new FormData();
       form.append("file", file);
@@ -293,19 +320,40 @@ export default function Home() {
 
         <div style={{ marginTop: 16 }}>
           <button onClick={analyze} disabled={!file || loading}>
-            {loading ? "Analyzing…" : "Analyze Resume →"}
+            {loading ? <>Analyzing<span className="dots" /></> : "Analyze Resume →"}
           </button>
         </div>
 
-        {loading && <p className="spinner">Parsing your resume and scoring it — this takes a few seconds.</p>}
+        {loading && (
+          <>
+            <div className="progress" role="progressbar" aria-label="Analyzing" />
+            <p className="spinner">{ANALYZE_MESSAGES[statusIdx]}</p>
+          </>
+        )}
         {error && <p className="error">{error}</p>}
       </div>
 
       {loading && <ResultsSkeleton />}
 
-      {result && <Results result={result} />}
-
       {result && (
+        <div className="tabs" role="tablist">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              role="tab"
+              aria-selected={activeTab === t.id}
+              className={`tab${activeTab === t.id ? " active" : ""}`}
+              onClick={() => setActiveTab(t.id)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {result && activeTab === "analysis" && <Results result={result} />}
+
+      {result && activeTab === "improve" && (
         <div className="card">
           <h3 style={{ marginTop: 0 }}>Improve &amp; download</h3>
           <p style={{ color: "var(--muted)", fontSize: 14, marginTop: 0 }}>
@@ -313,7 +361,7 @@ export default function Home() {
           </p>
           {!improved && (
             <button onClick={improve} disabled={improving}>
-              {improving ? "Rewriting…" : "✨ Improve my resume"}
+              {improving ? <>Rewriting<span className="dots" /></> : "✨ Improve my resume"}
             </button>
           )}
           {improving && (
@@ -361,7 +409,7 @@ export default function Home() {
           )}
         </div>
       )}
-      {result && (
+      {result && activeTab === "cover" && (
         <div className="card">
           <h3 style={{ marginTop: 0 }}>Cover letter</h3>
           <p style={{ color: "var(--muted)", fontSize: 14, marginTop: 0 }}>
@@ -369,7 +417,7 @@ export default function Home() {
           </p>
           {!coverDone && (
             <button onClick={generateCover} disabled={generatingCover}>
-              {generatingCover ? "Writing…" : "✍️ Generate cover letter"}
+              {generatingCover ? <>Writing<span className="dots" /></> : "✍️ Generate cover letter"}
             </button>
           )}
           {generatingCover && (
@@ -406,7 +454,7 @@ export default function Home() {
           )}
         </div>
       )}
-      {history.length > 0 && (
+      {((result && activeTab === "history") || (!result && history.length > 0)) && (
         <div className="card">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <h3 style={{ margin: 0 }}>Your history</h3>
